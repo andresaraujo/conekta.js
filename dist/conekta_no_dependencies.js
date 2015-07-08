@@ -440,59 +440,44 @@
               message_to_purchaser: "Your code could not be processed, please try again later"
             });
           };
-          if (document.location.protocol === 'file:') {
-            params.url = (params.jsonp_url || params.url) + '/create.js';
-            params.data['_Version'] = "0.3.0";
-            params.data['_RaiseHtmlError'] = false;
-            params.data['auth_token'] = Conekta.getPublishableKey();
-            params.data['conekta_client_user_agent'] = '{"agent":"Conekta JavascriptBindings/0.3.0"}';
+          if (document.location.protocol === 'file:' || typeof (new XMLHttpRequest()).withCredentials !== 'undefined') {
             return ajax({
               url: base_url + params.url,
-              dataType: 'jsonp',
-              data: params.data,
+              type: 'POST',
+              dataType: 'json',
+              data: JSON.stringify(params.data),
+              contentType: 'application/json',
+              headers: {
+                'RaiseHtmlError': false,
+                'Accept': 'application/vnd.conekta-v0.3.0+json',
+                'Accept-Language': Conekta.getLanguage(),
+                'Conekta-Client-User-Agent': '{"agent":"Conekta JavascriptBindings/0.3.0"}',
+                'Authorization': 'Basic ' + Base64.encode(Conekta.getPublishableKey() + ':')
+              },
               success: success_callback,
               error: error_callback
             });
           } else {
-            if (typeof (new XMLHttpRequest()).withCredentials !== 'undefined') {
-              return ajax({
-                url: base_url + params.url,
-                type: 'POST',
-                dataType: 'json',
-                data: JSON.stringify(params.data),
-                contentType: 'application/json',
-                headers: {
-                  'RaiseHtmlError': false,
-                  'Accept': 'application/vnd.conekta-v0.3.0+json',
-                  'Accept-Language': Conekta.getLanguage(),
-                  'Conekta-Client-User-Agent': '{"agent":"Conekta JavascriptBindings/0.3.0"}',
-                  'Authorization': 'Basic ' + Base64.encode(Conekta.getPublishableKey() + ':')
-                },
-                success: success_callback,
-                error: error_callback
-              });
-            } else {
-              rpc = new easyXDM.Rpc({
-                swf: "https://conektaapi.s3.amazonaws.com/v0.3.2/flash/easyxdm.swf",
-                remote: base_url + "easyxdm_cors_proxy.html"
-              }, {
-                remote: {
-                  request: {}
-                }
-              });
-              return rpc.request({
-                url: base_url + params.url,
-                method: 'POST',
-                headers: {
-                  'RaiseHtmlError': false,
-                  'Accept': 'application/vnd.conekta-v0.3.0+json',
-                  'Accept-Language': Conekta.getLanguage(),
-                  'Conekta-Client-User-Agent': '{"agent":"Conekta JavascriptBindings/0.3.0"}',
-                  'Authorization': 'Basic ' + Base64.encode(Conekta.getPublishableKey() + ':')
-                },
-                data: JSON.stringify(params.data)
-              }, success_callback, error_callback);
-            }
+            rpc = new easyXDM.Rpc({
+              swf: "https://conektaapi.s3.amazonaws.com/v0.3.2/flash/easyxdm.swf",
+              remote: base_url + "easyxdm_cors_proxy.html"
+            }, {
+              remote: {
+                request: {}
+              }
+            });
+            return rpc.request({
+              url: base_url + params.url,
+              method: 'POST',
+              headers: {
+                'RaiseHtmlError': false,
+                'Accept': 'application/vnd.conekta-v0.3.0+json',
+                'Accept-Language': Conekta.getLanguage(),
+                'Conekta-Client-User-Agent': '{"agent":"Conekta JavascriptBindings/0.3.0"}',
+                'Authorization': 'Basic ' + Base64.encode(Conekta.getPublishableKey() + ':')
+              },
+              data: JSON.stringify(params.data)
+            }, success_callback, error_callback);
           }
         },
         log: function(data) {
